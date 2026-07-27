@@ -13,8 +13,14 @@ type Expense = {
 };
 
 function readExpensesFromCsv(): Expense[] {
-  const filePath = path.resolve(process.cwd(), "expenses.csv");
-  const content = readFileSync(filePath, "utf8");
+  const filePath = path.resolve(process.cwd(), "data", "expenses.csv");
+
+  let content: string;
+  try {
+    content = readFileSync(filePath, "utf8");
+  } catch {
+    return [];
+  }
 
   return content
     .trim()

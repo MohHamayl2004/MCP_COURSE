@@ -1,5 +1,5 @@
 import { McpServer } from "@modelcontextprotocol/server";
-import { serveStdio } from "@modelcontextprotocol/server/stdio";
+//import { serveStdio } from "@modelcontextprotocol/server/stdio";
 
 import { getMonthlySummaryInputSchema } from "../schemas/get-monthly-summary.js";
 

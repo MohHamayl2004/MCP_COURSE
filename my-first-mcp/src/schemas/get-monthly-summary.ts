@@ -5,7 +5,8 @@ import { z } from "zod";
  * The tool expects a single input:
  * - month: in YYYY-MM format (e.g. 2026-07)
  */
-export const getMonthlySummaryInputSchema = {
+
+export const getMonthlySummaryInputSchema = z.object({
   month: z
     .string()
     .regex(
@@ -13,4 +14,4 @@ export const getMonthlySummaryInputSchema = {
       "Month must be in YYYY-MM format (e.g. 2026-07)"
     )
     .describe("The month to summarize in YYYY-MM format"),
-};
+});

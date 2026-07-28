@@ -12,6 +12,7 @@ On Demo Day I tell the assistant "I spent 15 on lunch and 40 on gas today." It c
 - `add_expense` (P0) — Save a new expense record. Inputs: date, amount, category, note. Output: `{ id, date, amount, category, note }`.
 - `list_expenses` (P0) — List expenses, optionally filtered by month or category. Inputs: month?, category?. Output: `[{ id, date, amount, category, note }]`.
 - `get_monthly_summary` (P0) — Total spending + per-category breakdown for a month. Input: month. Output: `{ total, byCategory: { category: amount } }`.
+
 - `delete_expense` (P1) — Remove one expense by id. Input: id. Output: `{ deleted: true, id }`.
 - `get_top_expenses` (P1) — The N largest expenses in a period. Inputs: month?, limit. Output: `[{ id, amount, category, note }]`.
 - `list_categories` (P1) — All categories seen so far. Inputs: none. Output: `[category]`.

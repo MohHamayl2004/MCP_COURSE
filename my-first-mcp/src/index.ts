@@ -18,3 +18,4 @@ void serveStdio(() => {
 
 console.error("expense-tracker-mcp MCP server running on stdio");
 
+

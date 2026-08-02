@@ -1,7 +1,7 @@
 import { McpServer } from "@modelcontextprotocol/server";
 
 import { listExpensesInputSchema } from "../schemas/list-expenses.js";
-import { readExpenses } from "../lib/csv.js";
+import { loadExpenses, filterExpenses, cap } from "../lib/expenses.js";
 
 /** List expenses from the CSV fixture, optionally filtered (P0). */
 export function registerListExpensesTool(server: McpServer): void {
@@ -12,23 +12,24 @@ export function registerListExpensesTool(server: McpServer): void {
       inputSchema: listExpensesInputSchema,
     },
     async ({ month, category }) => {
-      const { items, skippedRows } = readExpenses("list_expenses");
-
-      const filtered = items.filter(
-        (e) =>
-          (!month || e.date.startsWith(month)) &&
-          (!category || e.category.toLowerCase() === category.toLowerCase()),
+      const { items, skippedRows } = loadExpenses("list_expenses");
+      const { items: page, truncated } = cap(
+        filterExpenses(items, { month, category }),
       );
 
-      const payload = {
-        items: filtered,
-        count: filtered.length,
-        skippedRows,
-        ...(filtered.length === 0 && { message: "No expenses matched." }),
-      };
+      if (page.length === 0) {
+        return {
+          content: [{ type: "text", text: "No expenses matched." }],
+        };
+      }
 
       return {
-        content: [{ type: "text", text: JSON.stringify(payload, null, 2) }],
+        content: [
+          {
+            type: "text",
+            text: JSON.stringify({ items: page, truncated, skippedRows }, null, 2),
+          },
+        ],
       };
     },
   );

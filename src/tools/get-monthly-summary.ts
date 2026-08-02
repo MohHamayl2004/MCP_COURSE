@@ -1,33 +1,37 @@
 import { McpServer } from "@modelcontextprotocol/server";
-import { serveStdio } from "@modelcontextprotocol/server/stdio";
+
 
 import { getMonthlySummaryInputSchema } from "../schemas/get-monthly-summary.js";
+import { loadExpenses, summarizeMonth } from "../lib/expenses.js";
 
-/**
- * Registers the get_monthly_summary tool.
- * CSV reading and summary calculation will be implemented later.
- */
+/** Total and per-category spending for one month (P0). */
 export function registerGetMonthlySummaryTool(server: McpServer): void {
   server.registerTool(
     "get_monthly_summary",
     {
-      title: "Get Monthly Summary",
-      description:
-        "Return a summary of expenses for a selected month.",
+      description: "Total spending and a per-category breakdown for one month.",
       inputSchema: getMonthlySummaryInputSchema,
     },
     async ({ month }) => {
+      const { items, skippedRows } = loadExpenses("get_monthly_summary");
+      const summary = summarizeMonth(items, month);
+
+      if (summary.count === 0) {
+        return {
+          content: [
+            { type: "text", text: `No expenses recorded for ${month}.` },
+          ],
+        };
+      }
+
       return {
         content: [
           {
             type: "text",
-            text:
-              `Monthly summary for ${month}\n\n` +
-              "🚧 This tool is registered successfully.\n" +
-              "CSV reading and summary calculation will be implemented in the next step.",
+            text: JSON.stringify({ ...summary, skippedRows }, null, 2),
           },
         ],
       };
-    }
+    },
   );
 }

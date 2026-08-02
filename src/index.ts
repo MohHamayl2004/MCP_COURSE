@@ -6,6 +6,8 @@ import { registerListExpensesTool } from "./tools/list-expenses.js";
 import { registerGetMonthlySummaryTool } from "./tools/get-monthly-summary.js";
 import { registerListCategoriesTool } from "./tools/list_categories.js";
 import { registerDeleteExpenseTool } from "./tools/delete-expense.js";
+import { registerGetTopExpensesTool } from "./tools/get-top-expenses.js";
+
 
 // Week 2: import and register your project tools here, for example:
 // import { registerAddNoteTool } from "./tools/add-note.js";
@@ -26,6 +28,7 @@ function createServer(): McpServer {
   registerGetMonthlySummaryTool(server);
   registerListCategoriesTool(server);
   registerDeleteExpenseTool(server);
+  registerGetTopExpensesTool(server);
   // Week 2 — register your multi-tool skeleton (stubs are OK)
   // registerAddNoteTool(server);
 

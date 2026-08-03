@@ -1,11 +1,11 @@
 import { McpServer } from "@modelcontextprotocol/server";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
-
+import { getMonthlySummary } from "../lib/expenses.js";
 import { getMonthlySummaryInputSchema } from "../schemas/get-monthly-summary.js";
 
 /**
  * Registers the get_monthly_summary tool.
- * CSV reading and summary calculation will be implemented later.
+ * Returns a monthly summary using data from data/expenses.csv.
  */
 export function registerGetMonthlySummaryTool(server: McpServer): void {
   server.registerTool(
@@ -17,14 +17,13 @@ export function registerGetMonthlySummaryTool(server: McpServer): void {
       inputSchema: getMonthlySummaryInputSchema,
     },
     async ({ month }) => {
+      const result = await getMonthlySummary(month);
+
       return {
         content: [
           {
             type: "text",
-            text:
-              `Monthly summary for ${month}\n\n` +
-              "🚧 This tool is registered successfully.\n" +
-              "CSV reading and summary calculation will be implemented in the next step.",
+            text: JSON.stringify(result, null, 2),
           },
         ],
       };

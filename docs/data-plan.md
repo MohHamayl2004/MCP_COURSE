@@ -13,7 +13,7 @@ Rate limits: none (it's a file on disk)
 | tool | source | fixture path | auth | rate limits | failure modes | example response |
 | add_expense | local CSV, append a row | ./data/expenses.csv | none | none | file doesn't exist yet, file open in Excel so it's locked, bad rows already in the file, date or amount that doesn't make sense | below |
 | list_expenses | local CSV, read and filter | ./data/expenses.csv | none | none | file doesn't exist, file is empty, a row has the wrong number of columns, amount isn't a number, filter matches nothing | below |
-| get_monthly_summary | local CSV, read and add up | ./data/expenses.csv | none | none | file doesn't exist, file is empty, bad row, asking for a month with no expenses, a junk amount that breaks the total | below |
+| get_spending_summary | local CSV, read and add up | ./data/expenses.csv | none | none | file doesn't exist, file is empty, bad row, asking for a month with no expenses, a junk amount that breaks the total | below |
 
 ## What the CSV looks like
 
@@ -61,7 +61,7 @@ list_expenses:
 ]
 ```
 
-get_monthly_summary:
+get_spending_summary:
 
 ```json
 {

@@ -45,7 +45,7 @@ export function registerGetTopExpensesTool(server: McpServer): void {
     "get_top_expenses",
     {
       title: "Get top expenses",
-      description: "Return the largest expenses, optionally filtered by month.",
+      description: "[P1 — not implemented] List all spending categories seen in the expenses.",
       inputSchema: getTopExpensesInputSchema,
     },
     async ({ month, limit }) => {

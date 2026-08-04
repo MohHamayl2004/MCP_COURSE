@@ -8,7 +8,7 @@ export function registerDeleteExpenseTool(server: McpServer) {
     "delete_expense",
     {
       title: "Delete Expense",
-      description: "Delete an expense from the CSV file using its row number.",
+      description: "[P1 — not implemented] List all spending categories seen in the expenses.",
       inputSchema: deleteExpenseInputSchema.shape,
     },
     async ({ row }) => {

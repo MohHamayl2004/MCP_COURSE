@@ -1,5 +1,6 @@
 import { McpServer } from "@modelcontextprotocol/server";
 import { serveStdio } from "@modelcontextprotocol/server/stdio";
+import { registerProjectResources } from "./resources/expenses.js";
 
 import { registerAddExpenseTool } from "./tools/add_expense.js";
 import { registerListExpensesTool } from "./tools/list-expenses.js";
@@ -26,8 +27,8 @@ function createServer(): McpServer {
   registerGetMonthlySummaryTool(server);
   registerListCategoriesTool(server);
   registerDeleteExpenseTool(server);
-  // Week 2 — register your multi-tool skeleton (stubs are OK)
-  // registerAddNoteTool(server);
+  registerProjectResources(server);
+
 
   return server;
 }

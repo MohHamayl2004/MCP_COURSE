@@ -1,81 +1,44 @@
-import fs from "fs";
-import path from "path";
 import { McpServer } from "@modelcontextprotocol/server";
 import { deleteExpenseInputSchema } from "../schemas/delete-expense.js";
+import { deleteExpense } from "../lib/expenses.js";
 
-export function registerDeleteExpenseTool(server: McpServer) {
+export function registerDeleteExpenseTool(server: McpServer): void { 
   server.registerTool(
     "delete_expense",
     {
       title: "Delete Expense",
-      description: "Delete an expense from the CSV file using its row number.",
+      description:
+      "Delete an expense from the CSV file using its data row number.",
       inputSchema: deleteExpenseInputSchema.shape,
     },
     async ({ row }) => {
       try {
-        const filePath = path.join(process.cwd(), "data", "expenses.csv");
-
-        if (!fs.existsSync(filePath)) {
-          return {
-            content: [
-              {
-                type: "text",
-                text: "Expenses file not found.",
-              },
-            ],
-          };
-        }
-
-        const rows = fs.readFileSync(filePath, "utf-8").trim().split("\n");
-
-        if (rows.length <= 1) {
-          return {
-            content: [
-              {
-                type: "text",
-                text: "No expenses found.",
-              },
-            ],
-          };
-        }
-
-        const rowIndex = Number(row);
-
-        if (rowIndex < 1 || rowIndex >= rows.length) {
-          return {
-            content: [
-              {
-                type: "text",
-                text: `Invalid row number: ${row}`,
-              },
-            ],
-          };
-        }
-
-        rows.splice(rowIndex, 1);
-
-        fs.writeFileSync(filePath, rows.join("\n"));
+        const result = await deleteExpense(row);
 
         return {
           content: [
             {
               type: "text",
-              text: `Expense at row ${row} deleted successfully.`,
+              text: JSON.stringify(result, null, 2),
             },
           ],
         };
       } catch (error) {
+        const reason =
+          error instanceof Error ? error.message : "Unknown error";
+
+        console.error(`[delete_expense] ${reason}`);
+
         return {
           content: [
             {
               type: "text",
-              text: `Error deleting expense: ${
-                error instanceof Error ? error.message : String(error)
-              }`,
+              text: `Could not delete the expense: ${reason}`,
             },
           ],
+          isError: true,
         };
       }
-    }
+    },
   );
 }

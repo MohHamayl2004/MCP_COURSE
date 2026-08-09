@@ -28,7 +28,7 @@ function createServer(): McpServer {
   registerGetSpendingSummaryTool(server);
   registerListCategoriesTool(server);
   registerDeleteExpenseTool(server);
-  registerGetTopExpensesTool(server); 
+  registerGetTopExpensesTool(server);
   registerExpenseResources(server);
   // Week 2 — register your multi-tool skeleton (stubs are OK)
   // registerAddNoteTool(server);

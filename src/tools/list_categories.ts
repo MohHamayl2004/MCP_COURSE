@@ -8,7 +8,7 @@ export function registerListCategoriesTool(server: McpServer): void {
     "list_categories",
     {
       description:
-        "List all spending categories that appear in the saved expenses.",
+        "[P1 — not implemented] List all spending categories seen in the expenses.",
       inputSchema: listCategoriesInputSchema,
     },
     async () => {

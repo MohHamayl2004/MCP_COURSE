@@ -3,11 +3,11 @@ import { serveStdio } from "@modelcontextprotocol/server/stdio";
 
 import { registerAddExpenseTool } from "./tools/add_expense.js";
 import { registerListExpensesTool } from "./tools/list-expenses.js";
-import { registerGetMonthlySummaryTool } from "./tools/get-monthly-summary.js";
+import { registerGetSpendingSummaryTool } from "./tools/get-spending-summary.js";
 import { registerListCategoriesTool } from "./tools/list_categories.js";
 import { registerDeleteExpenseTool } from "./tools/delete-expense.js";
 import { registerGetTopExpensesTool } from "./tools/get-top-expenses.js";
-
+import { registerExpenseResources } from "./resources/expenses.js";
 
 // Week 2: import and register your project tools here, for example:
 // import { registerAddNoteTool } from "./tools/add-note.js";
@@ -25,10 +25,11 @@ function createServer(): McpServer {
   // Week 1 — expense tracker P0 tools
   registerAddExpenseTool(server);
   registerListExpensesTool(server);
-  registerGetMonthlySummaryTool(server);
+  registerGetSpendingSummaryTool(server);
   registerListCategoriesTool(server);
   registerDeleteExpenseTool(server);
   registerGetTopExpensesTool(server);
+  registerExpenseResources(server);
   // Week 2 — register your multi-tool skeleton (stubs are OK)
   // registerAddNoteTool(server);
 

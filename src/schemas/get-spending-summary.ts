@@ -1,11 +1,11 @@
 import { z } from "zod";
 
 /**
- * Input validation for the get_monthly_summary tool.
+ * Input validation for the get_spending_summary tool.
  * The tool expects a single input:
  * - month: in YYYY-MM format (e.g. 2026-07)
  */
-export const getMonthlySummaryInputSchema = {
+export const getSpendingSummaryInputSchema = {
   month: z
     .string()
     .regex(

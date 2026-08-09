@@ -1,3 +1,14 @@
 id,date,amount,category,note
+exp_001,2026-07-02,15.00,food,Lunch at campus cafeteria
+exp_002,2026-07-03,40.00,transport,Gas
+exp_003,2026-07-05,120.00,food,Weekly groceries
+exp_004,2026-07-09,25.50,entertainment,Cinema ticket
+exp_005,2026-07-14,60.00,transport,Bus pass
+exp_006,2026-07-18,32.00,food,Dinner with friends
+exp_007,2026-07-21,200.00,rent,Share of utilities
+exp_008,2026-07-25,18.75,other,Notebook and pens
+09af692b-4d15-41dd-a7d8-618aa239ba2e,2026-08-23,20,food,nothing
+exp_009,2026-07-29,50.00,food,
+exp_010,2026-07-29,50.00,food,
 7a35164f-b4ef-4633-867e-484c968906b0,2004-08-23,100,food,
 e2930530-4616-4f3d-b34d-2391a91d829f,2026-08-23,150,car,important

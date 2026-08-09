@@ -1,53 +1,58 @@
 # Week 4 — Threat model
 
-Rule I'm working from: tool arguments come from a model, not a person, so treat them
+Expense Tracker MCP. Tool arguments come from a model, not a person, so I treat them
 like untrusted HTTP input.
 
-## What each tool touches
+## Assets
 
-| tool | disk | network | user-controlled strings |
-|---|---|---|---|
-| add_expense | write (append) | no | date, amount, category, note |
-| list_expenses | read | no | month, category |
-| get_spending_summary | read | no | month |
-| delete_expense (P1 stub) | would rewrite | no | id |
-| get_top_expenses (P1 stub) | read | no | month, limit |
-| list_categories (P1 stub) | read | no | none |
-| expenses://fixture (resource) | read | no | none |
-| expenses://categories (resource) | read | no | none |
+- `./data/expenses.csv` — the only real data in the project. Losing it or corrupting it
+  breaks the demo; leaking it exposes my spending history.
+- The rest of the filesystem — anything my server could read if a path escaped `./data`
+  (`.env`, `package.json`, files outside the repo entirely).
+- No API keys, no tokens, no credentials. Nothing external to steal.
 
-## The four risks, applied to my project
+## Trust boundaries
 
-**1. Path traversal — low right now, easy to break later.**
-No tool takes a file path as an argument. Every read goes through
-`resolveDataPath("expenses.csv")`, a hardcoded name, and that helper already rejects
-anything resolving outside `./data`. The risk is future me: the moment I add a tool
-that accepts a filename, the guard is the only thing standing between a model and
-`../../.env`. Keep the guard, never call `fs.readFileSync` directly.
+- **Model → tool arguments.** Every field in every Zod schema. This is the main
+  boundary and the only one an attacker actually controls.
+- **Tool → filesystem.** `src/lib/paths.ts` and `src/lib/csv.ts`. Everything that
+  touches disk goes through `resolveDataPath()`.
+- **Tool → network.** None. No tool makes a request. `src/lib/http.ts` exists with a
+  working `fetchJson()` but nothing calls it.
+- **Server → model.** What I return. Oversized responses are a real problem here even
+  though they aren't an "attack."
 
-**2. SSRF — not applicable, but there's dead code.**
-No tool makes a network request. However `src/lib/http.ts` exists with a working
-`fetchJson()` that takes any URL. Nothing calls it today. If someone wires it to a
-tool argument later, that's an SSRF hole. Either delete it or add an allowlist before
-it's ever used.
+## Top 5 risks
 
-**3. Secret leaks — low, but worth checking.**
-No API keys anywhere. Things to verify: `.env` is gitignored (only `.env.example` is
-committed), and `logFailure()` writes the raw CSV line to stderr on a bad row — if the
-notes column ever holds something sensitive, that ends up in logs. Also `node_modules`
-was committed early in this repo's history, so old commits are worth a glance.
+1. **Uncapped resource output.** `expenses://fixture` returns the whole CSV with no
+   limit. It's 10 rows today, but `add_expense` grows it every call. Nothing stops it
+   flooding the model's context.
+2. **Unused fetch helper becomes SSRF.** `http.ts` takes any URL. If a future tool
+   passes a model-supplied string to it, that's a request to anywhere — including
+   internal addresses.
+3. **Path traversal if I add a file argument.** No tool takes a filename today, so the
+   hardcoded `"expenses.csv"` protects me by accident. The first tool that accepts a
+   path makes `resolveDataPath()` the only defence.
+4. **Unbounded `note` field.** `add_expense` accepts a string of any length and writes
+   it into the CSV. A very long note bloats the file and every later read.
+5. **Raw row data in logs.** `logFailure()` prints the whole bad CSV line to stderr,
+   including the note column.
 
-**4. Runaway responses — this is my real risk.**
-`list_expenses` is capped at 20 items via `cap()`. Good. But `expenses://fixture`
-returns the **entire CSV with no limit**. Right now that's 10 rows, but nothing stops
-the file growing to thousands after repeated `add_expense` calls, and the whole thing
-would land in the model's context. `get_spending_summary` is naturally bounded (one
-object per category), so it's fine.
+## Mitigations this week
 
-## What I'll harden next
+1. Cap `expenses://fixture` at 50 rows plus a total count — size cap.
+2. Delete `http.ts`, or add a hostname allowlist and keep the existing 8s timeout.
+3. Add a test asserting `resolveDataPath("../package.json")` throws, so the guard can't
+   be removed without a failure.
+4. Add `.max(200)` to `note` and `.max(40)` to `category` in the Zod schema.
+5. Log only the row number and the reason, not the row contents.
 
-1. Cap or paginate the `expenses://fixture` resource — biggest actual gap.
-2. Decide on `http.ts`: delete it, or allowlist it before anything calls it.
-3. Add a test that `resolveDataPath("../package.json")` throws, so the guard can't be
-   removed silently.
-4. Cap `note` length in `add_expense` so one huge string can't bloat the CSV.
+## Out of scope
+
+- **Auth and multi-user.** Single local user, one CSV, no server exposed to a network.
+- **Encryption at rest.** The data is fake fixture spending in a public repo.
+- **Rate limiting.** Local file access, no quota to protect.
+- **Supply-chain auditing.** Two dependencies, both from the MCP SDK ecosystem.
+
+All four are fine to skip because this server runs on my own machine over stdio, not as
+a hosted service. If it were ever deployed, auth and rate limiting would come first.

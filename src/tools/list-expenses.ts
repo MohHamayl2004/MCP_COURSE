@@ -11,10 +11,11 @@ export function registerListExpensesTool(server: McpServer): void {
       description: "List expenses, optionally filtered by month or category.",
       inputSchema: listExpensesInputSchema,
     },
-    async ({ month, category }) => {
+    async ({ month, category, limit }) => {
       const { items, skippedRows } = loadExpenses("list_expenses");
       const { items: page, truncated } = cap(
         filterExpenses(items, { month, category }),
+        limit,
       );
 
       if (page.length === 0) {

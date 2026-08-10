@@ -35,19 +35,24 @@ export function registerExpenseResources(server: McpServer): void {
       description: "Every category currently used in the expense data",
       mimeType: "application/json",
     },
-    async (uri) => {
-      const { items } = loadExpenses("expenses://categories");
-      const categories = [...new Set(items.map((e) => e.category))].sort();
+   async (uri) => {
+      const file = resolveDataPath("expenses.csv");
+      if (!fs.existsSync(file)) {
+        return { contents: [{ uri: uri.href, mimeType: "text/csv", text: "id,date,amount,category,note\n" }] };
+      }
 
-      return {
-        contents: [
-          {
-            uri: uri.href,
-            mimeType: "application/json",
-            text: JSON.stringify({ categories }, null, 2),
-          },
-        ],
-      };
+      const lines = fs.readFileSync(file, "utf8").trimEnd().split(/\r?\n/);
+      const [header, ...rows] = lines;
+      const MAX_ROWS = 50;
+      const shown = rows.slice(0, MAX_ROWS);
+
+      const text =
+        [header, ...shown].join("\n") +
+        (rows.length > MAX_ROWS
+          ? `\n# truncated: showing ${MAX_ROWS} of ${rows.length} rows`
+          : "");
+
+      return { contents: [{ uri: uri.href, mimeType: "text/csv", text }] };
     },
   );
 }

@@ -3,7 +3,6 @@ import fs from "node:fs";
 import { expenseRowSchema, type ExpenseRow } from "../schemas/expense-row.js";
 import { resolveDataPath } from "./paths.js";
 
-/** Log a failure to stderr. Never use console.log — stdout is the MCP channel. */
 export function logFailure(tool: string, reason: string): void {
   console.error(`[${tool}] ${reason}`);
 }
@@ -26,8 +25,9 @@ export function readExpenses(tool: string): {
   const items: ExpenseRow[] = [];
   let skippedRows = 0;
 
-  for (const line of dataLines) {
+  for (const [index, line] of dataLines.entries()) {
     if (!line.trim()) continue;
+
     const [id, date, amount, category, ...noteParts] = line.split(",");
     const parsed = expenseRowSchema.safeParse({
       id, date, amount, category, note: noteParts.join(","),
@@ -37,7 +37,7 @@ export function readExpenses(tool: string): {
       items.push(parsed.data);
     } else {
       skippedRows += 1;
-      logFailure(tool, `skipped bad row: ${line}`);
+      logFailure(tool, `skipped invalid row at line ${index + 2}`);
     }
   }
 

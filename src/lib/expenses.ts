@@ -22,27 +22,10 @@ const CSV_HEADER = "id,date,amount,category,note";
  * initially arrive as strings.
  */
 export const expenseSchema = z.object({
-  id: z.coerce
-    .number()
-    .int()
-    .positive("Expense ID must be a positive integer"),
-
-  date: z
-    .string()
-    .regex(
-      /^\d{4}-\d{2}-\d{2}$/,
-      "Expense date must use YYYY-MM-DD format",
-    ),
-
-  amount: z.coerce
-    .number()
-    .positive("Expense amount must be greater than zero"),
-
-  category: z
-    .string()
-    .trim()
-    .min(1, "Expense category cannot be empty"),
-
+  id: z.coerce.number().int().positive("Expense ID must be a positive integer"),
+  date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, "Expense date must use YYYY-MM-DD format",),
+  amount: z.coerce.number().positive("Expense amount must be greater than zero"),
+  category: z.string().trim().min(1, "Expense category cannot be empty"),
   note: z.string().trim(),
 });
 
@@ -93,12 +76,11 @@ export interface DeleteExpenseResult {
  * outside the project's data folder.
  */
 function resolveDataPath(fileName: string): string {
+  
   const resolvedPath = path.resolve(DATA_DIRECTORY, fileName);
-
-  if (!resolvedPath.startsWith(`${DATA_DIRECTORY}${path.sep}`)) {
+  if (!resolvedPath.startsWith(`${DATA_DIRECTORY}${path.sep}`)) 
     throw new Error("Access outside the data directory is not allowed");
-  }
-
+  
   return resolvedPath;
 }
 
@@ -113,34 +95,37 @@ function resolveDataPath(fileName: string): string {
  * 1,2026-08-01,20,Food,"Lunch, coffee"
  */
 function parseCsvLine(line: string): string[] {
+  
   const fields: string[] = [];
   let currentField = "";
   let insideQuotes = false;
 
-  for (let index = 0; index < line.length; index += 1) {
+  for (let index = 0; index < line.length; index += 1) 
+  {
     const character = line[index];
-
-    if (character === '"') {
+    if (character === '"') 
+    {
       const nextCharacter = line[index + 1];
-
-      if (insideQuotes && nextCharacter === '"') {
+      if (insideQuotes && nextCharacter === '"') 
+      {
         currentField += '"';
         index += 1;
-      } else {
+      } 
+      else 
         insideQuotes = !insideQuotes;
-      }
-    } else if (character === "," && !insideQuotes) {
+    } 
+    else if (character === "," && !insideQuotes) 
+    {
       fields.push(currentField);
       currentField = "";
-    } else {
+    } 
+    else 
       currentField += character;
-    }
   }
 
-  if (insideQuotes) {
+  if (insideQuotes) 
     throw new Error("Invalid CSV data: an opening quote was not closed");
-  }
-
+  
   fields.push(currentField);
 
   return fields;
@@ -154,14 +139,8 @@ function parseCsvLine(line: string): string[] {
 function escapeCsvValue(value: string | number): string {
   const text = String(value);
 
-  if (
-    text.includes(",") ||
-    text.includes('"') ||
-    text.includes("\n") ||
-    text.includes("\r")
-  ) {
+  if (text.includes(",") || text.includes('"') || text.includes("\n") || text.includes("\r")) 
     return `"${text.replaceAll('"', '""')}"`;
-  }
 
   return text;
 }
@@ -170,13 +149,7 @@ function escapeCsvValue(value: string | number): string {
  * Convert one expense object into a CSV line.
  */
 function expenseToCsvLine(expense: Expense): string {
-  return [
-    expense.id,
-    expense.date,
-    expense.amount,
-    expense.category,
-    expense.note,
-  ]
+  return [expense.id, expense.date, expense.amount, expense.category, expense.note,]
     .map(escapeCsvValue)
     .join(",");
 }
@@ -185,16 +158,11 @@ function expenseToCsvLine(expense: Expense): string {
  * Validate the CSV header.
  */
 function validateHeader(headerLine: string): void {
-  const normalizedHeader = headerLine
-    .replace(/^\uFEFF/, "")
-    .trim()
-    .toLowerCase();
+  const normalizedHeader = headerLine.replace(/^\uFEFF/, "").trim().toLowerCase();
 
-  if (normalizedHeader !== CSV_HEADER) {
-    throw new Error(
-      `Invalid CSV header. Expected: ${CSV_HEADER}`,
-    );
-  }
+  if (normalizedHeader !== CSV_HEADER) 
+    throw new Error(`Invalid CSV header. Expected: ${CSV_HEADER}`,);
+  
 }
 
 /**
@@ -203,47 +171,32 @@ function validateHeader(headerLine: string): void {
  * Empty data rows are ignored.
  */
 export function parseExpensesCsv(csvContent: string): Expense[] {
-  const normalizedContent = csvContent.replace(/\r\n/g, "\n").trim();
 
-  if (normalizedContent === "") {
+  const normalizedContent = csvContent.replace(/\r\n/g, "\n").trim();
+  if (normalizedContent === "") 
     return [];
-  }
 
   const lines = normalizedContent.split("\n");
-
   validateHeader(lines[0]);
 
-  const dataLines = lines
-    .slice(1)
-    .filter((line) => line.trim() !== "");
-
-  return dataLines.map((line, index) => {
+  const dataLines = lines.slice(1).filter((line) => line.trim() !== "");
+  return dataLines.map((line, index) => 
+  {
     const columns = parseCsvLine(line);
-
-    if (columns.length !== 5) {
-      throw new Error(
-        `Invalid CSV data at row ${index + 2}: expected 5 columns but found ${columns.length}`,
-      );
-    }
-
-    const rawExpense = {
-      id: columns[0].trim(),
-      date: columns[1].trim(),
-      amount: columns[2].trim(),
-      category: columns[3].trim(),
-      note: columns[4].trim(),
-    };
+    if (columns.length !== 5) 
+      throw new Error(`Invalid CSV data at row ${index + 2}: expected 5 columns but found ${columns.length}`,);
+    
+    const rawExpense = {id: columns[0].trim(),
+                        date: columns[1].trim(),
+                        amount: columns[2].trim(),
+                        category: columns[3].trim(),
+                        note: columns[4].trim(),};
 
     const validationResult = expenseSchema.safeParse(rawExpense);
-
-    if (!validationResult.success) {
-      const reason = validationResult.error.issues
-        .map((issue) => issue.message)
-        .join("; ");
-
-      throw new Error(
-        `Invalid expense data at CSV row ${index + 2}: ${reason}`,
-      );
+    if (!validationResult.success) 
+    {
+      const reason = validationResult.error.issues.map((issue) => issue.message).join("; ");
+      throw new Error(`Invalid expense data at CSV row ${index + 2}: ${reason}`,);
     }
 
     return validationResult.data;
@@ -256,26 +209,24 @@ export function parseExpensesCsv(csvContent: string): Expense[] {
  * If the file does not exist, it is created with the correct header.
  */
 export async function loadExpenses(): Promise<Expense[]> {
-  const filePath = resolveDataPath(EXPENSES_FILE_NAME);
 
-  try {
+  const filePath = resolveDataPath(EXPENSES_FILE_NAME);
+  try 
+  {
     const csvContent = await fs.readFile(filePath, "utf8");
     return parseExpensesCsv(csvContent);
-  } catch (error) {
+  } 
+  catch (error) 
+  {
     const nodeError = error as NodeJS.ErrnoException;
-
-    if (nodeError.code === "ENOENT") {
+    if (nodeError.code === "ENOENT") 
+    {
       await fs.mkdir(DATA_DIRECTORY, { recursive: true });
       await fs.writeFile(filePath, `${CSV_HEADER}\n`, "utf8");
-
       return [];
     }
 
-    throw new Error(
-      `Failed to load expenses: ${
-        error instanceof Error ? error.message : "Unknown error"
-      }`,
-    );
+    throw new Error(`Failed to load expenses: ${error instanceof Error ? error.message : "Unknown error"}`,);
   }
 }
 
@@ -284,50 +235,35 @@ export async function loadExpenses(): Promise<Expense[]> {
  *
  * The complete file is rewritten with a valid header.
  */
-export async function saveExpenses(
-  expenses: Expense[],
-): Promise<void> {
-  const filePath = resolveDataPath(EXPENSES_FILE_NAME);
-
-  /*
+export async function saveExpenses(expenses: Expense[],): Promise<void> {
+    /*
    * Validate records again before writing.
    * This prevents invalid application data from corrupting the CSV.
    */
+  const filePath = resolveDataPath(EXPENSES_FILE_NAME);
+
   const validatedExpenses = expenses.map((expense, index) => {
     const validationResult = expenseSchema.safeParse(expense);
-
-    if (!validationResult.success) {
-      const reason = validationResult.error.issues
-        .map((issue) => issue.message)
-        .join("; ");
-
-      throw new Error(
-        `Cannot save invalid expense at index ${index}: ${reason}`,
-      );
+    if (!validationResult.success) 
+    {
+      const reason = validationResult.error.issues.map((issue) => issue.message).join("; ");
+      throw new Error(`Cannot save invalid expense at index ${index}: ${reason}`,);
     }
 
     return validationResult.data;
   });
 
-  const csvLines = [
-    CSV_HEADER,
-    ...validatedExpenses.map(expenseToCsvLine),
-  ];
+  const csvLines = [CSV_HEADER,...validatedExpenses.map(expenseToCsvLine),];
 
   await fs.mkdir(DATA_DIRECTORY, { recursive: true });
 
-  try {
-    await fs.writeFile(
-      filePath,
-      `${csvLines.join("\n")}\n`,
-      "utf8",
-    );
-  } catch (error) {
-    throw new Error(
-      `Failed to save expenses: ${
-        error instanceof Error ? error.message : "Unknown error"
-      }`,
-    );
+  try 
+  {
+    await fs.writeFile(filePath, `${csvLines.join("\n")}\n`,"utf8",);
+  } 
+  catch (error) 
+  {
+    throw new Error(`Failed to save expenses: ${error instanceof Error ? error.message : "Unknown error"}`,);
   }
 }
 
@@ -336,34 +272,23 @@ export async function saveExpenses(
  *
  * A new ID is generated using the highest current ID + 1.
  */
-export async function addExpense(
-  input: AddExpenseInput,
-): Promise<Expense> {
+export async function addExpense(input: AddExpenseInput,): Promise<Expense> {
+  
   const expenses = await loadExpenses();
+  const nextId = expenses.length === 0 ? 1 : Math.max(...expenses.map((expense) => expense.id)) + 1;
 
-  const nextId =
-    expenses.length === 0
-      ? 1
-      : Math.max(...expenses.map((expense) => expense.id)) + 1;
-
-  const validationResult = expenseSchema.safeParse({
-    id: nextId,
-    date: input.date,
-    amount: input.amount,
-    category: input.category,
-    note: input.note,
-  });
-
-  if (!validationResult.success) {
-    const reason = validationResult.error.issues
-      .map((issue) => issue.message)
-      .join("; ");
-
-    throw new Error(`Invalid expense input: ${reason}`);
+  const validationResult = expenseSchema.safeParse({id: nextId,
+                                                    date: input.date,
+                                                    amount: input.amount,
+                                                    category: input.category,
+                                                    note: input.note,});
+  if (!validationResult.success) 
+  {
+  const reason = validationResult.error.issues.map((issue) => issue.message).join("; ");
+  throw new Error(`Invalid expense input: ${reason}`);
   }
 
   const newExpense = validationResult.data;
-
   await saveExpenses([...expenses, newExpense]);
 
   return newExpense;
@@ -375,24 +300,17 @@ export async function addExpense(
  * Month format: YYYY-MM
  * Category matching is case-insensitive.
  */
-export async function listExpenses(
-  filters: ExpenseFilters = {},
-): Promise<Expense[]> {
+export async function listExpenses(filters: ExpenseFilters = {},): Promise<Expense[]> {
+  
   const expenses = await loadExpenses();
-
-  if (
-    filters.month !== undefined &&
-    !/^\d{4}-\d{2}$/.test(filters.month)
-  ) {
+  if (filters.month !== undefined && !/^\d{4}-\d{2}$/.test(filters.month)) 
     throw new Error("Month must use YYYY-MM format");
-  }
-
+  
   const normalizedCategory = filters.category?.trim().toLowerCase();
 
   return expenses.filter((expense) => {
-    const matchesMonth =
-      filters.month === undefined ||
-      expense.date.startsWith(`${filters.month}-`);
+    const matchesMonth = filters.month === undefined || expense.date
+    .startsWith(`${filters.month}-`);
 
     const matchesCategory =
       normalizedCategory === undefined ||
@@ -402,58 +320,58 @@ export async function listExpenses(
   });
 }
 
+
+export interface TopExpensesOptions {
+  month?: string;
+  limit: number;
+}
+
+export async function getTopExpenses(options: TopExpensesOptions,): Promise<Expense[]> {
+  
+  const { month, limit } = options;
+  if (!Number.isInteger(limit) || limit < 1) 
+    throw new Error("Limit must be a positive integer");
+  
+  if (month !== undefined && !/^\d{4}-\d{2}$/.test(month)) 
+    throw new Error("Month must use YYYY-MM format");
+  
+  const expenses = await loadExpenses();
+  return expenses.filter((expense) => month === undefined || expense.date
+                .startsWith(`${month}-`),)
+                .sort((first, second) => second.amount - first.amount)
+                .slice(0, limit);
+}
+
 /**
  * Calculate the total spending and category breakdown for one month.
  *
  * If no records match, this returns a valid empty summary instead
  * of throwing an error.
  */
-export async function getMonthlySummary(
-  month: string,
-): Promise<MonthlySummary> {
-  if (!/^\d{4}-\d{2}$/.test(month)) {
+export async function getMonthlySummary(month: string,): Promise<MonthlySummary> {
+  
+  if (!/^\d{4}-\d{2}$/.test(month)) 
     throw new Error("Month must use YYYY-MM format");
-  }
-
+  
   const monthlyExpenses = await listExpenses({ month });
-
-  if (monthlyExpenses.length === 0) {
-    return {
-      month,
-      total: 0,
-      byCategory: {},
-      message: "No expenses were found for the requested month.",
-    };
-  }
-
+  if (monthlyExpenses.length === 0) 
+    return {month, total: 0, byCategory: {}, message: "No expenses were found for the requested month.",};
+  
   const byCategory: Record<string, number> = {};
-
-  for (const expense of monthlyExpenses) {
-    byCategory[expense.category] =
-      (byCategory[expense.category] ?? 0) + expense.amount;
-  }
-
-  const total = monthlyExpenses.reduce(
-    (sum, expense) => sum + expense.amount,
-    0,
-  );
+  for (const expense of monthlyExpenses) 
+    byCategory[expense.category] = (byCategory[expense.category] ?? 0) + expense.amount;
+  
+  const total = monthlyExpenses.reduce((sum, expense) => sum + expense.amount, 0,);
 
   /*
    * Round values to two decimal places to avoid floating-point
    * results such as 19.999999999.
    */
-  const roundedCategories = Object.fromEntries(
-    Object.entries(byCategory).map(([category, amount]) => [
-      category,
-      Number(amount.toFixed(2)),
-    ]),
-  );
+  const roundedCategories = Object.fromEntries(Object.entries(byCategory)
+                                                      .map(([category, amount]) => [category, Number(amount
+                                                      .toFixed(2)),]),);
 
-  return {
-    month,
-    total: Number(total.toFixed(2)),
-    byCategory: roundedCategories,
-  };
+  return {month, total: Number(total.toFixed(2)), byCategory: roundedCategories,};
 }
 
 /**
@@ -462,69 +380,25 @@ export async function getMonthlySummary(
  * row = 1 means the first expense after the CSV header.
  * The header itself is not counted.
  */
-export async function deleteExpense(
-  row: number | string,
-): Promise<DeleteExpenseResult> {
-  const numericRow =
-    typeof row === "string" ? Number(row) : row;
+export async function deleteExpense(row: number | string,): Promise<DeleteExpenseResult> {
 
-  if (!Number.isInteger(numericRow) || numericRow < 1) {
+  const numericRow = typeof row === "string" ? Number(row) : row;
+  if (!Number.isInteger(numericRow) || numericRow < 1) 
     throw new Error("Row number must be a positive integer");
-  }
+  
 
   const expenses = await loadExpenses();
-
-  if (expenses.length === 0) {
+  if (expenses.length === 0) 
     throw new Error("Cannot delete an expense because the CSV is empty");
-  }
 
   const expenseIndex = numericRow - 1;
-
-  if (expenseIndex >= expenses.length) {
+  if (expenseIndex >= expenses.length) 
     throw new Error(`Expense row ${numericRow} was not found`);
-  }
 
   const deletedExpense = expenses[expenseIndex];
 
-  const remainingExpenses = expenses.filter(
-    (_, index) => index !== expenseIndex,
-  );
-
+  const remainingExpenses = expenses.filter((_, index) => index !== expenseIndex,);
   await saveExpenses(remainingExpenses);
 
-  return {
-    deleted: true,
-    row: numericRow,
-    expense: deletedExpense,
-  };
-}
-
-
-export interface TopExpensesOptions {
-  month?: string;
-  limit: number;
-}
-
-export async function getTopExpenses(
-  options: TopExpensesOptions,
-): Promise<Expense[]> {
-  const { month, limit } = options;
-
-  if (!Number.isInteger(limit) || limit < 1) {
-    throw new Error("Limit must be a positive integer");
-  }
-
-  if (month !== undefined && !/^\d{4}-\d{2}$/.test(month)) {
-    throw new Error("Month must use YYYY-MM format");
-  }
-
-  const expenses = await loadExpenses();
-
-  return expenses
-    .filter(
-      (expense) =>
-        month === undefined || expense.date.startsWith(`${month}-`),
-    )
-    .sort((first, second) => second.amount - first.amount)
-    .slice(0, limit);
+  return {deleted: true, row: numericRow, expense: deletedExpense,};
 }

@@ -19,8 +19,13 @@ export const addExpenseInputSchema = z.object({
     .max(1_000_000, "Amount is unrealistically large")
     .describe("Amount spent, a positive number"),
   category: z
-    .enum(EXPENSE_CATEGORIES)
-    .describe("Spending category"),
+    .string()
+    .trim()
+    .toLowerCase()
+    .min(1, "Category cannot be empty")
+    .max(40, "Category must be 40 characters or fewer")
+    .regex(/^[a-z][a-z0-9 -]*$/, "Category may only contain letters, numbers, spaces and hyphens")
+    .describe("Spending category, e.g. food, transport, health"),
   note: z
     .string()
     .trim()

@@ -11,7 +11,10 @@ export const EXPENSE_CATEGORIES = [
 export const addExpenseInputSchema = z.object({
   date: z
     .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "Date must be YYYY-MM-DD")
+    .regex(
+      /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/,
+      "Date must be a valid YYYY-MM-DD",
+    )
     .describe("Date the money was spent, in YYYY-MM-DD format"),
   amount: z
     .number()

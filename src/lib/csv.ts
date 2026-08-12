@@ -2,6 +2,7 @@ import fs from "node:fs";
 
 import { expenseRowSchema, type ExpenseRow } from "../schemas/expense-row.js";
 import { resolveDataPath } from "./paths.js";
+import { parseCsvLine } from "./csv-format.js";
 
 export function logFailure(tool: string, reason: string): void {
   console.error(`[${tool}] ${reason}`);
@@ -28,9 +29,9 @@ export function readExpenses(tool: string): {
   for (const [index, line] of dataLines.entries()) {
     if (!line.trim()) continue;
 
-    const [id, date, amount, category, ...noteParts] = line.split(",");
+    const [id, date, amount, category, note = ""] = parseCsvLine(line);
     const parsed = expenseRowSchema.safeParse({
-      id, date, amount, category, note: noteParts.join(","),
+      id, date, amount, category, note,
     });
 
     if (parsed.success) {

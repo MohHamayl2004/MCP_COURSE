@@ -29,3 +29,4 @@ export const addExpenseOutputSchema = z.object({
 });
 
 export type AddExpenseOutput = z.infer<typeof addExpenseOutputSchema>;
+

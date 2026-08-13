@@ -1,0 +1,54 @@
+# Peer Review Checklist
+
+## Review Areas
+
+* [x] Tool schemas reviewed
+* [x] Error handling reviewed
+* [x] Secrets and `.env` handling reviewed
+* [x] Data validation/allowlists reviewed
+* [x] README reviewed
+* [x] Demo path reviewed
+* [x] Three P0 tools demonstrated
+* [x] Security attack demonstrated and rejected
+
+## Peer Feedback
+
+### What Worked
+
+* `get_monthly_summary` returns a valid empty summary with a clear message when no expenses are found for the requested month.
+* Monthly totals are rounded to two decimal places, preventing floating-point noise from reaching the model.
+* `delete_expense` validates its input before performing the deletion and returns the deleted expense record.
+* Failures are logged to `stderr`, keeping `stdout` clean for the MCP protocol.
+* Both reviewed tools are well structured and handle expected cases clearly.
+
+### Issues Found
+
+* Month validation was inconsistent between the schema and library layer. The schema restricted months to `01–12`, while the library used `/^\d{4}-\d{2}$/`, which allowed invalid values such as `2026-13`.
+* A malformed row in `expenses.csv` caused the entire monthly summary operation to fail because `parseExpensesCsv` threw an error instead of skipping the invalid row.
+* Internal error details could reach the model. For example, an `ENOENT` error could expose the full absolute filesystem path.
+* `delete_expense` deleted expenses by CSV row position. Since row positions shift after a deletion, repeating the same row number could delete a different expense.
+* `saveExpenses` rewrote the original CSV file directly, creating a risk of data loss or corruption if the write operation was interrupted.
+
+### Recommended Fixes
+
+* Use one shared month validation pattern across the schema and library layers.
+* Skip malformed CSV rows and return a `skippedRows` count instead of failing the entire operation.
+* Log detailed errors to `stderr` and return short, sanitized error messages to the model.
+* Delete expenses using their unique `id` instead of CSV row position.
+* Write updated expense data to a temporary file first, then rename it over the original file after a successful write.
+
+## Action Items
+
+| Action Item | Owner | Due Date | Status |
+| --- | --- | --- | --- |
+| Use a shared month validation pattern | Malak Shamasneh | End of Week 4 | Completed |
+| Skip malformed CSV rows and report `skippedRows` | Malak Shamasneh | End of Week 4 | Completed |
+| Sanitize model-facing error messages | Malak Shamasneh | End of Week 4 | Completed |
+| Change `delete_expense` from row-based to ID-based deletion | Malak Shamasneh | End of Week 4 | Completed |
+| Use temporary-file writing before replacing `expenses.csv` | Malak Shamasneh | End of Week 4 | Completed |
+
+## Peer Reviewer
+
+**Full Name:** Mohammad Muwaffaq
+
+**Review Date:** 12-Aug-2026

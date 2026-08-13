@@ -1,4 +1,10 @@
 id,date,amount,category,note
-2,2026-08-01,40,Transport,Gas
-3,2026-08-02,70,Shopping,T-shirt
-4,2026-08-15,500,Electricity,-
+2,2026-08-03,35,transport,Taxi
+3,2026-08-05,75.25,entertainment,Cinema
+4,2026-08-08,450,rent,Monthly rent
+5,2026-08-10,18.75,food,Lunch
+6,2026-08-12,22,transport,Bus card
+7,2026-08-15,60.5,other,Internet bill
+8,2026-07-20,30,food,Dinner
+9,2026-07-22,15.5,transport,Bus
+10,2026-07-25,90,entertainment,Weekend activity

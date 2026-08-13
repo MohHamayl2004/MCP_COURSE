@@ -1,6 +1,7 @@
 import { promises as fs } from "node:fs";
 import path from "node:path";
 import { z } from "zod";
+import { MONTH_PATTERN } from "../lib/validation.js";
 
 /*
  * Absolute path of the project's data directory.
@@ -57,6 +58,7 @@ export interface MonthlySummary {
   month: string;
   total: number;
   byCategory: Record<string, number>;
+  skippedRows: number;
   message?: string;
 }
 
@@ -65,7 +67,7 @@ export interface MonthlySummary {
  */
 export interface DeleteExpenseResult {
   deleted: true;
-  row: number;
+  id: number;
   expense: Expense;
 }
 
@@ -170,37 +172,90 @@ function validateHeader(headerLine: string): void {
  *
  * Empty data rows are ignored.
  */
-export function parseExpensesCsv(csvContent: string): Expense[] {
+export interface ParsedExpenses {
+  expenses: Expense[];
+  skippedRows: number;
+}
+
+/**
+ * Parse and validate the contents of expenses.csv.
+ *
+ * Invalid data rows are skipped and counted.
+ */
+export function parseExpensesCsv(csvContent: string): ParsedExpenses {
 
   const normalizedContent = csvContent.replace(/\r\n/g, "\n").trim();
   if (normalizedContent === "") 
-    return [];
+    return {expenses: [], skippedRows: 0,};
 
   const lines = normalizedContent.split("\n");
   validateHeader(lines[0]);
-
   const dataLines = lines.slice(1).filter((line) => line.trim() !== "");
-  return dataLines.map((line, index) => 
-  {
-    const columns = parseCsvLine(line);
-    if (columns.length !== 5) 
-      throw new Error(`Invalid CSV data at row ${index + 2}: expected 5 columns but found ${columns.length}`,);
-    
-    const rawExpense = {id: columns[0].trim(),
-                        date: columns[1].trim(),
-                        amount: columns[2].trim(),
-                        category: columns[3].trim(),
-                        note: columns[4].trim(),};
 
-    const validationResult = expenseSchema.safeParse(rawExpense);
-    if (!validationResult.success) 
-    {
-      const reason = validationResult.error.issues.map((issue) => issue.message).join("; ");
-      throw new Error(`Invalid expense data at CSV row ${index + 2}: ${reason}`,);
+  const expenses: Expense[] = [];
+  let skippedRows = 0;
+
+  for (let index = 0; index < dataLines.length; index += 1) {
+    try {
+      const columns = parseCsvLine(dataLines[index]);
+      if (columns.length !== 5) {
+        skippedRows += 1;
+        console.error(`[expenses] Skipping CSV row ${index + 2}: expected 5 columns but found ${columns.length}`,);
+        continue;
+      }
+
+      const rawExpense = {id: columns[0].trim(),
+                          date: columns[1].trim(),
+                          amount: columns[2].trim(),
+                          category: columns[3].trim(),
+                          note: columns[4].trim(),};
+
+      const validationResult = expenseSchema.safeParse(rawExpense);
+      if (!validationResult.success) {
+        const reason = validationResult.error.issues.map((issue) => issue.message).join("; ");
+        skippedRows += 1;
+        console.error( `[expenses] Skipping CSV row ${index + 2}: ${reason}`,);
+        continue;
+      }
+
+      expenses.push(validationResult.data);
+    } catch (error) {
+      const reason = error instanceof Error ? error.message : "Unknown parsing error";
+      skippedRows += 1;
+      console.error(`[expenses] Skipping CSV row ${index + 2}: ${reason}`,);
+    }
+  }
+
+  return {expenses,skippedRows,};
+}
+
+//helper function
+async function loadExpensesWithMetadata(): Promise<ParsedExpenses> {
+  const filePath = resolveDataPath(EXPENSES_FILE_NAME);
+
+  try {
+    const csvContent = await fs.readFile(filePath, "utf8");
+
+    return parseExpensesCsv(csvContent);
+  } catch (error) {
+    const nodeError = error as NodeJS.ErrnoException;
+
+    if (nodeError.code === "ENOENT") {
+      await fs.mkdir(DATA_DIRECTORY, { recursive: true });
+      await fs.writeFile(filePath, `${CSV_HEADER}\n`, "utf8");
+
+      return {
+        expenses: [],
+        skippedRows: 0,
+      };
     }
 
-    return validationResult.data;
-  });
+    throw new Error(
+      `Failed to load expenses: ${
+        error instanceof Error ? error.message : "Unknown error"
+      }`,
+    );
+  }
 }
 
 /**
@@ -209,25 +264,16 @@ export function parseExpensesCsv(csvContent: string): Expense[] {
  * If the file does not exist, it is created with the correct header.
  */
 export async function loadExpenses(): Promise<Expense[]> {
+  const { expenses, skippedRows } =
+    await loadExpensesWithMetadata();
 
-  const filePath = resolveDataPath(EXPENSES_FILE_NAME);
-  try 
-  {
-    const csvContent = await fs.readFile(filePath, "utf8");
-    return parseExpensesCsv(csvContent);
-  } 
-  catch (error) 
-  {
-    const nodeError = error as NodeJS.ErrnoException;
-    if (nodeError.code === "ENOENT") 
-    {
-      await fs.mkdir(DATA_DIRECTORY, { recursive: true });
-      await fs.writeFile(filePath, `${CSV_HEADER}\n`, "utf8");
-      return [];
-    }
-
-    throw new Error(`Failed to load expenses: ${error instanceof Error ? error.message : "Unknown error"}`,);
+  if (skippedRows > 0) {
+    console.error(
+      `[expenses] Skipped ${skippedRows} invalid CSV row(s)`,
+    );
   }
+
+  return expenses;
 }
 
 /**
@@ -254,18 +300,18 @@ export async function saveExpenses(expenses: Expense[],): Promise<void> {
   });
 
   const csvLines = [CSV_HEADER,...validatedExpenses.map(expenseToCsvLine),];
-
   await fs.mkdir(DATA_DIRECTORY, { recursive: true });
+  const tempFilePath = `${filePath}.tmp`;
 
-  try 
-  {
-    await fs.writeFile(filePath, `${csvLines.join("\n")}\n`,"utf8",);
-  } 
-  catch (error) 
-  {
-    throw new Error(`Failed to save expenses: ${error instanceof Error ? error.message : "Unknown error"}`,);
+  try {
+    await fs.writeFile(tempFilePath,`${csvLines.join("\n")}\n`,"utf8",);
+    await fs.rename(tempFilePath, filePath);
+  } catch (error) {
+    const reason = error instanceof Error ? error.message : "Unknown error";
+    console.error(`[expenses] Failed to save expenses: ${reason}`);
+    throw new Error("Failed to save expense data");
   }
-}
+} 
 
 /**
  * Add a new expense to the CSV file.
@@ -350,13 +396,16 @@ export async function getTopExpenses(options: TopExpensesOptions,): Promise<Expe
  */
 export async function getMonthlySummary(month: string,): Promise<MonthlySummary> {
   
-  if (!/^\d{4}-\d{2}$/.test(month)) 
+  if (!MONTH_PATTERN.test(month)) 
     throw new Error("Month must use YYYY-MM format");
-  
-  const monthlyExpenses = await listExpenses({ month });
+
+  const { expenses, skippedRows } = await loadExpensesWithMetadata();
+
+  const monthlyExpenses = expenses.filter((expense) => expense.date.startsWith(`${month}-`),);
   if (monthlyExpenses.length === 0) 
-    return {month, total: 0, byCategory: {}, message: "No expenses were found for the requested month.",};
-  
+    return {month, total: 0, byCategory: {}, skippedRows, message: "No expenses were found for the requested month.",};
+
+    
   const byCategory: Record<string, number> = {};
   for (const expense of monthlyExpenses) 
     byCategory[expense.category] = (byCategory[expense.category] ?? 0) + expense.amount;
@@ -371,7 +420,7 @@ export async function getMonthlySummary(month: string,): Promise<MonthlySummary>
                                                       .map(([category, amount]) => [category, Number(amount
                                                       .toFixed(2)),]),);
 
-  return {month, total: Number(total.toFixed(2)), byCategory: roundedCategories,};
+  return {month, total: Number(total.toFixed(2)), byCategory: roundedCategories, skippedRows,};
 }
 
 /**
@@ -380,25 +429,23 @@ export async function getMonthlySummary(month: string,): Promise<MonthlySummary>
  * row = 1 means the first expense after the CSV header.
  * The header itself is not counted.
  */
-export async function deleteExpense(row: number | string,): Promise<DeleteExpenseResult> {
+export async function deleteExpense(id: number,): Promise<DeleteExpenseResult> {
 
-  const numericRow = typeof row === "string" ? Number(row) : row;
-  if (!Number.isInteger(numericRow) || numericRow < 1) 
-    throw new Error("Row number must be a positive integer");
-  
+  if (!Number.isInteger(id) || id < 1) 
+    throw new Error("Expense ID must be a positive integer");
 
   const expenses = await loadExpenses();
-  if (expenses.length === 0) 
-    throw new Error("Cannot delete an expense because the CSV is empty");
+  const expenseIndex = expenses.findIndex((expense) => expense.id === id,);
 
-  const expenseIndex = numericRow - 1;
-  if (expenseIndex >= expenses.length) 
-    throw new Error(`Expense row ${numericRow} was not found`);
+  if (expenseIndex === -1) 
+    throw new Error(`Expense with ID ${id} was not found`);
+  
 
   const deletedExpense = expenses[expenseIndex];
 
-  const remainingExpenses = expenses.filter((_, index) => index !== expenseIndex,);
+  const remainingExpenses = expenses.filter((expense) => expense.id !== id,);
+
   await saveExpenses(remainingExpenses);
 
-  return {deleted: true, row: numericRow, expense: deletedExpense,};
+  return {deleted: true, id, expense: deletedExpense,};
 }

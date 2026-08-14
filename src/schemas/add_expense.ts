@@ -1,31 +1,38 @@
-import { z } from "zod";
+import { z } from "zod/v4";
 
-/** Input validation for the add_expense tool. */
+export const EXPENSE_CATEGORIES = [
+  "food",
+  "transport",
+  "entertainment",
+  "rent",
+  "other",
+] as const;
+
 export const addExpenseInputSchema = z.object({
   date: z
     .string()
-    .regex(/^\d{4}-\d{2}-\d{2}$/, "date must be in YYYY-MM-DD format")
-    .describe("The expense date in YYYY-MM-DD format"),
+    .regex(
+      /^\d{4}-(0[1-9]|1[0-2])-(0[1-9]|[12]\d|3[01])$/,
+      "Date must be a valid YYYY-MM-DD",
+    )
+    .describe("Date the money was spent, in YYYY-MM-DD format"),
   amount: z
     .number()
-    .positive("amount must be greater than 0")
-    .describe("The amount spent, as a positive number"),
+    .positive("Amount must be greater than zero")
+    .max(1_000_000, "Amount is unrealistically large")
+    .describe("Amount spent, a positive number"),
   category: z
     .string()
-    .min(1, "category is required")
-    .describe("The spending category, such as food or transport"),
-  note: z.string().optional().describe("Optional free-text note about the expense"),
+    .trim()
+    .toLowerCase()
+    .min(1, "Category cannot be empty")
+    .max(40, "Category must be 40 characters or fewer")
+    .regex(/^[a-z][a-z0-9 -]*$/, "Category may only contain letters, numbers, spaces and hyphens")
+    .describe("Spending category, e.g. food, transport, health"),
+  note: z
+    .string()
+    .trim()
+    .max(200, "Note must be 200 characters or fewer")
+    .optional()
+    .describe("Optional short description of the expense"),
 });
-
-export type AddExpenseInput = z.infer<typeof addExpenseInputSchema>;
-
-/** Output shape for the add_expense tool. */
-export const addExpenseOutputSchema = z.object({
-  id: z.string().describe("Unique identifier assigned to the new expense record"),
-  date: z.string().describe("The expense date in YYYY-MM-DD format"),
-  amount: z.number().describe("The amount spent"),
-  category: z.string().describe("The spending category"),
-  note: z.string().describe("Free-text note about the expense, empty string if none"),
-});
-
-export type AddExpenseOutput = z.infer<typeof addExpenseOutputSchema>;

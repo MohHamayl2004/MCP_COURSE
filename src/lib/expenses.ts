@@ -3,6 +3,7 @@ import fs from "node:fs";
 import { readExpenses, logFailure } from "./csv.js";
 import { resolveDataPath } from "./paths.js";
 import type { ExpenseRow } from "../schemas/expense-row.js";
+import { toCsvValue } from "./csv-format.js";
 
 const MAX_ITEMS = 20;
 
@@ -46,8 +47,10 @@ export function summarizeMonth(items: ExpenseRow[], month: string) {
 // Next sequential id
 export function nextId(items: ExpenseRow[]): string {
   const highest = items.reduce((max, e) => {
-    const n = Number(e.id.replace(/\D/g, ""));
-    return Number.isFinite(n) && n > max ? n : max;
+    const match = /^exp_(\d+)$/.exec(e.id);
+    if (!match) return max;                      // ignore malformed ids
+    const n = Number(match[1]);
+    return Number.isSafeInteger(n) && n > max ? n : max;
   }, 0);
   return `exp_${String(highest + 1).padStart(3, "0")}`;
 }
@@ -63,13 +66,13 @@ export function appendExpense(
   const { items } = readExpenses(tool);
   const record: ExpenseRow = { id: nextId(items), ...row };
 
-  const line = [
+ const line = [
     record.id,
     record.date,
     record.amount.toFixed(2),
     record.category,
     record.note.replace(/[\r\n]+/g, " "),
-  ].join(",");
+  ].map(toCsvValue).join(",");
 
   const existing = fs.existsSync(file)
     ? fs.readFileSync(file, "utf8").trimEnd()

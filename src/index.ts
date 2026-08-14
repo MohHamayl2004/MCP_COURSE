@@ -4,7 +4,7 @@ import { serveStdio } from "@modelcontextprotocol/server/stdio";
 import { registerAddExpenseTool } from "./tools/add_expense.js";
 import { registerListExpensesTool } from "./tools/list-expenses.js";
 import { registerGetSpendingSummaryTool } from "./tools/get-spending-summary.js";
-import { registerListCategoriesTool } from "./tools/list_categories.js";
+import { registerListCategoriesTool } from "./tools/list-categories.js";
 import { registerDeleteExpenseTool } from "./tools/delete-expense.js";
 import { registerGetTopExpensesTool } from "./tools/get-top-expenses.js";
 import { registerExpenseResources } from "./resources/expenses.js";

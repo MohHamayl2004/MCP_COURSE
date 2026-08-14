@@ -1,13 +1,22 @@
 import { z } from "zod/v4";
 
-/** Input validation for the list_expenses tool. */
+import { EXPENSE_CATEGORIES } from "./add_expense.js";
+
 export const listExpensesInputSchema = z.object({
   month: z
     .string()
+    .regex(/^\d{4}-(0[1-9]|1[0-2])$/, "Month must be YYYY-MM")
     .optional()
     .describe("Optional month filter in YYYY-MM format"),
   category: z
-    .string()
+    .enum(EXPENSE_CATEGORIES)
     .optional()
-    .describe("Optional category filter such as food or transport"),
+    .describe("Optional category filter"),
+  limit: z
+    .number()
+    .int()
+    .min(1)
+    .max(100)
+    .default(20)
+    .describe("Maximum rows to return, defaults to 20"),
 });

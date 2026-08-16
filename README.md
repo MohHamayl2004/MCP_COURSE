@@ -30,6 +30,19 @@ Before running anything in this repo, make sure you have:
 
 > As the course progresses, run instructions for specific projects will be added to their own folders.
 
+## Tests
+
+Smoke tests cover the pure helper functions — CSV escaping and parsing, filtering,
+monthly summaries, id generation and output caps. They use Node's built-in test runner,
+so there's nothing extra to install.
+
+```bash
+npm test
+```
+
+Current status: **23 tests passing**. The MCP transport itself isn't unit tested; that's
+covered manually through Inspector in `docs/test-plan.md`.
+
 ## Course Structure
 
 - **1.2 Git & GitHub kickoff** — set up this repository, practiced staging, committing, and pushing changes.

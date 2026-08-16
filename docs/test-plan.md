@@ -16,13 +16,13 @@ git checkout data/expenses.csv
 The committed fixture has 9 rows: 5 food, 2 transport, 1 entertainment, 1 rent, 1 other
 (8 rows dated 2026-07, 1 dated 2026-08).
 
-**Run date:** 2026-08-15 — all 12 cases PASS, no code changes were needed.
+**Run date:** 2026-08-16 — all 12 cases PASS, no code changes were needed.
 
 ## Cases
 
 | id | tool | setup | input | expected | result | evidence |
 |---|---|---|---|---|---|---|
-| T-01 | `add_expense` | Fixture reset | `{"date":"2026-07-29","amount":15,"category":"food","note":"Lunch at the campus cafeteria"}` | Success. Returns the saved record with the next sequential id (`exp_010`). A new row appears in the CSV. | PASS — returned `exp_010`, row count 9 → 10 | Figure 1 |
+| T-01 | `add_expense` | Fixture reset | `{"date":"2026-08-16","amount":25,"category":"food","note":"nothing"}` | Success. Returns the saved record with the next sequential id (`exp_010`). A new row appears in the CSV. | PASS — returned `exp_010`, row count 9 → 10 | Figure 1 |
 | T-02 | `list_expenses` | Fixture reset | `{"month":"2026-07","category":"food"}` | Only July food rows (`exp_001`, `exp_003`, `exp_006`), `skippedRows: 0`, `truncated: 0`. | PASS — 3 rows, `skippedRows: 0` | Inspector run |
 | T-03 | `get_spending_summary` | Fixture reset | `{"month":"2026-07"}` | `total: 511.25`, breakdown food 167, transport 100, entertainment 25.5, rent 200, other 18.75. | PASS — total 511.25, breakdown exact | Inspector run |
 | T-04 | `add_expense` | Fixture reset | `{"date":"2026-13-45","amount":25,"category":"food"}` | Rejected before the handler runs: "Date must be a valid YYYY-MM-DD". Nothing written. | PASS — rejected, CSV unchanged | Figure 2 |

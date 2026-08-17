@@ -1,59 +1,129 @@
-# MCP_COURSE
+# Expense Tracker MCP
 
-A learning repository documenting my progress through the MCP (Model Context Protocol) course. It holds my notes, exercises, and code as I work through each section of the program.
+An MCP server that lets an AI assistant answer questions about your spending. Add an
+expense in plain language, list what you spent in a given month or category, and get a
+monthly total with a per-category breakdown — all read from and written to a single
+local CSV file.
 
-## About
+Everything runs offline. There are no API keys, no accounts, and no network calls, so
+the server works with the Wi-Fi switched off.
 
-This repo tracks the hands-on work for the course, starting with Git & GitHub fundamentals and building up to working with the Model Context Protocol. Each section is committed as I complete it, so the history reflects my learning journey.
+## Requirements
 
-## Prerequisites
+- [Node.js](https://nodejs.org/) 20 or newer (`node --version` to check)
+- [Git](https://git-scm.com/)
 
-Before running anything in this repo, make sure you have:
+That's it. No database, no API keys.
 
-- [Git](https://git-scm.com/) installed
-- A code editor such as [VS Code](https://code.visualstudio.com/)
+## Install
 
-## How to Run / Use This Repo
+```bash
+git clone https://github.com/MohHamayl2004/MCP_COURSE.git
+cd MCP_COURSE
+npm install
+```
 
-1. **Clone the repository**
-   ```bash
-   git clone https://github.com/MohHamayl2004/MCP_COURSE.git
-   ```
+## Run
 
-2. **Open the folder**
-   ```bash
-   cd MCP_COURSE
-   code .
-   ```
+```bash
+npm run dev
+```
 
-3. **Explore the contents** — browse the files and folders to follow along with each course section.
+The server starts silently and speaks MCP over stdio — no output means it's working.
+Press `Ctrl+C` to stop it.
 
-> As the course progresses, run instructions for specific projects will be added to their own folders.
-
-## Tests
-
-Smoke tests cover the pure helper functions — CSV escaping and parsing, filtering,
-monthly summaries, id generation and output caps. They use Node's built-in test runner,
-so there's nothing extra to install.
+To run the tests:
 
 ```bash
 npm test
 ```
 
-Current status: **23 tests passing**. The MCP transport itself isn't unit tested; that's
-covered manually through Inspector in `docs/test-plan.md`.
+23 tests covering the pure helper functions: CSV escaping and parsing, filtering,
+monthly summaries, id generation and output caps.
 
-## Course Structure
+## Try it in Inspector
 
-- **1.2 Git & GitHub kickoff** — set up this repository, practiced staging, committing, and pushing changes.
-- *(More sections will be added as the course continues.)*
+The easiest way to see the tools working:
 
-## Academy
+```bash
+npx @modelcontextprotocol/inspector npx tsx src/index.ts
+```
 
-This project is part of my coursework at the academy. Learn more here:
-[Academy Website](https://REPLACE-WITH-ACADEMY-URL.com)
+Open the URL it prints, click the toggle next to the server to connect, then open the
+**Tools** tab. Select `list_expenses`, leave the arguments empty and hit **Execute
+Tool** — you should get the sample expenses back.
 
-## Author
+## Tools
 
-**Mohammad Hamayel**
-GitHub: [@MohHamayl2004](https://github.com/MohHamayl2004)
+| tool | what it does | inputs |
+|---|---|---|
+| `add_expense` | Saves a new expense to the CSV and returns it with a new id | `date` (YYYY-MM-DD), `amount` (positive number), `category`, `note` (optional, max 200 chars) |
+| `list_expenses` | Lists expenses, optionally filtered | `month` (YYYY-MM, optional), `category` (optional), `limit` (1–100, default 20) |
+| `get_spending_summary` | Monthly total plus a per-category breakdown | `month` (YYYY-MM) |
+| `list_categories` | Every category present in the data | `month` (YYYY-MM, optional) |
+| `delete_expense` | **Not implemented yet** — stub | `row` |
+| `get_top_expenses` | **Not implemented yet** — stub | `month` (optional), `limit` |
+
+## Resources
+
+Read-only context the assistant can pull without calling a tool:
+
+| uri | contents |
+|---|---|
+| `expenses://fixture` | The raw CSV, capped at 50 rows |
+| `expenses://categories` | The list of categories currently in use |
+
+## Example prompts
+
+Once the server is connected to an MCP client, these all work in plain language:
+
+- "I spent 15 on lunch and 40 on gas today."
+- "How much did I spend this month?"
+- "Show me everything I spent on food in July."
+- "What categories am I tracking?"
+- "What was my biggest expense in July?"
+
+## Data
+
+All expenses live in `data/expenses.csv`, which is committed to the repo so the project
+has data to work with straight after cloning. The columns are:
+
+```csv
+id,date,amount,category,note
+exp_001,2026-07-02,15.00,food,Lunch at campus cafeteria
+```
+
+To reset it to the committed state at any time:
+
+```bash
+git checkout data/expenses.csv
+```
+
+## Troubleshooting
+
+**"Cannot find module '@modelcontextprotocol/server'"**
+You skipped `npm install`, or it failed part way. Run it again from the repo root — not
+from inside `src/`.
+
+**Inspector connects then immediately shows "Disconnected"**
+The server crashed on startup. Run `npx tsx src/index.ts` on its own to see the error.
+The usual cause is a stray `console.log` somewhere in `src/` — stdout carries the MCP
+protocol, so anything printed there breaks the connection. Use `console.error` instead.
+
+**`list_expenses` returns nothing, or `skippedRows` is above 0**
+The server reads `data/expenses.csv` relative to the folder you started it from, so run
+it from the repo root. If rows are being skipped, some lines in the CSV don't match the
+expected shape — ids must look like `exp_001` and dates must be valid `YYYY-MM-DD`.
+Check stderr, which logs the line number of every skipped row.
+
+## Project docs
+
+- [`docs/design.md`](docs/design.md) — scope, tool inventory, success criteria
+- [`docs/data-plan.md`](docs/data-plan.md) — data sources and failure modes
+- [`docs/threat-model.md`](docs/threat-model.md) — assets, risks, mitigations
+- [`docs/test-plan.md`](docs/test-plan.md) — manual test cases and results
+- [`SECURITY.md`](SECURITY.md) — how to report an issue
+
+## License
+
+MIT — see [LICENSE](LICENSE).

@@ -29,8 +29,8 @@ npm install
 npm run dev
 ```
 
-The server starts silently and speaks MCP over stdio — no output means it's working.
-Press `Ctrl+C` to stop it.
+You should see `mcprepo MCP server running on stdio`, then nothing else — that means
+it's working and waiting for an MCP client. Press `Ctrl+C` to stop it.
 
 To run the tests:
 

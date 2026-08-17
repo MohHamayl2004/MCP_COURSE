@@ -35,6 +35,25 @@ The committed fixture has 9 rows: 5 food, 2 transport, 1 entertainment, 1 rent, 
 | T-11 | `add_expense` | Fixture reset | `{"date":"2026-07-29","amount":25,"category":"../../etc/passwd"}` | Rejected: category may only contain letters, numbers, spaces and hyphens. Nothing written. | PASS — rejected before the handler | Inspector run |
 | T-12 | `list_categories` | Fixture reset | `{}` and `{"month":"2026-07"}` | Categories actually present in the CSV, sorted. Month variant excludes unused categories. | PASS — `["entertainment","food","other","rent","transport"]` | Inspector run |
 
+## Evidence
+
+Screenshots are committed under [`docs/evidence/`](evidence).
+
+**Figure 1 — T-01, happy path.** `add_expense` saves a real row and returns the next
+sequential id: "Saved exp_010: 25 on food (2026-08-16)".
+
+![T-01 happy path](evidence/t01-add-expense-happy-path.png)
+
+**Figure 2 — T-04, validation rejection.** `add_expense` with the date `2026-13-45` is
+refused by the Zod schema before the handler runs, so nothing is written to the CSV.
+
+![T-04 invalid date rejected](evidence/t04-invalid-date-rejected.png)
+
+**Figure 3 — T-07, empty data.** `list_expenses` for `2026-01`, a month with no
+expenses, returns "No expenses matched." — a successful result, not an error.
+
+![T-07 empty month](evidence/t07-empty-month.png)
+
 ## Coverage
 
 - Happy path, one per P0 tool: T-01, T-02, T-03

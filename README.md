@@ -53,33 +53,73 @@ Open the URL it prints, click the toggle next to the server to connect, then ope
 **Tools** tab. Select `list_expenses`, leave the arguments empty and hit **Execute
 Tool** — you should get the sample expenses back.
 
-## Use it with Claude Desktop
+## Connect to Claude Desktop
 
-Open Claude Desktop → **Settings** → **Developer** → **Edit Config**, and add this
-inside `mcpServers` (keep anything already in the file):
+Inspector is for development. To actually use the server, register it with Claude
+Desktop.
+
+Open Claude Desktop → **Settings** → **Developer** → **Edit Config**. That opens:
+
+- **Windows:** `%APPDATA%\Claude\claude_desktop_config.json`
+- **macOS:** `~/Library/Application Support/Claude/claude_desktop_config.json`
+
+Add your server inside `mcpServers`, keeping any entries that are already there. This is
+the exact configuration this project was tested with:
+
+```json
+{
+  "mcpServers": {
+    "expense-tracker": {
+      "command": "npx.cmd",
+      "args": ["-y", "tsx", "src/index.ts"],
+      "cwd": "C:\\Users\\Owner's\\MCP_COURSE"
+    }
+  }
+}
+```
+
+Swap `cwd` for wherever you cloned the repo — it must be an absolute path to the repo
+root, not to `src/`. On macOS or Linux use `"command": "npx"` and a normal path:
 
 ```json
 {
   "mcpServers": {
     "expense-tracker": {
       "command": "npx",
-      "args": ["tsx", "C:\\path\\to\\MCP_COURSE\\src\\index.ts"]
+      "args": ["-y", "tsx", "src/index.ts"],
+      "cwd": "/Users/you/MCP_COURSE"
     }
   }
 }
 ```
 
-Replace the path with wherever you cloned the repo. On macOS or Linux use a normal path
-like `/Users/you/MCP_COURSE/src/index.ts`.
+On Windows, plain `npx` often fails where `npx.cmd` works. If either is reported as not
+found, put the full path from `where npx` (Windows) or `which npx` (macOS) in `command`
+— Claude doesn't load your shell profile, so it may not see your PATH.
 
-Quit Claude Desktop completely and reopen it — it only reads that file at launch. The
-server should then appear under **Manage connectors**, and you can just ask:
+**Quit Claude Desktop completely and reopen it.** The config is only read at startup;
+closing the window isn't enough.
+
+In a new chat, open the connectors control next to the message box → **Manage
+connectors**. You should see `expense-tracker` and its six tools. Then just ask:
 
 > How much did I spend in July?
 
-The data folder is resolved relative to the project, not your working directory, so it
-works no matter where Claude launches the process from. Set `EXPENSES_DATA_DIR` if you
-want to point it at a different CSV.
+### If it doesn't appear
+
+1. Check `cwd` is an absolute path to an existing folder.
+2. From that folder, run `npx -y tsx src/index.ts` yourself. It should print
+   `mcprepo MCP server running on stdio` and wait. `Ctrl+C` to stop.
+3. Read the logs — `mcp.log` and `mcp-server-expense-tracker.log` in
+   `%APPDATA%\Claude\logs\` (Windows) or `~/Library/Logs/Claude/` (macOS). If you
+   installed Claude from the Microsoft Store, the real path is
+   `%LOCALAPPDATA%\Packages\Claude_*\LocalCache\Roaming\Claude\logs\`.
+4. Validate the JSON — no trailing commas, no comments.
+
+A note on `cwd`: this server resolves its data folder relative to the project files
+rather than the working directory, so it finds `data/expenses.csv` even if `cwd` is
+wrong. `cwd` is still worth setting so `npx` resolves the local `tsx`. Set
+`EXPENSES_DATA_DIR` to point at a different CSV.
 
 ## Tools
 

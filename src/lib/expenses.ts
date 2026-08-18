@@ -86,6 +86,50 @@ export function appendExpense(
   return record;
 }
 
+// The N largest expenses, optionally limited to one month
+export function topExpenses(
+  items: ExpenseRow[],
+  { month, limit }: { month?: string; limit: number },
+): ExpenseRow[] {
+  return filterExpenses(items, { month })
+    .slice()
+    .sort((a, b) => b.amount - a.amount)
+    .slice(0, limit);
+}
+
+// Rewrite the whole file: temp file first, then rename, so a crash can't truncate it
+function writeExpenses(items: ExpenseRow[]): void {
+  const file = resolveDataPath("expenses.csv");
+  const header = "id,date,amount,category,note";
+
+  const lines = items.map((e) =>
+    [e.id, e.date, e.amount.toFixed(2), e.category, e.note.replace(/[\r\n]+/g, " ")]
+      .map(toCsvValue)
+      .join(","),
+  );
+
+  const temp = `${file}.tmp`;
+  fs.writeFileSync(temp, `${header}\n${lines.join("\n")}\n`, "utf8");
+  fs.renameSync(temp, file);
+}
+
+// Delete one expense by id. Unknown ids are reported, not thrown.
+export function deleteExpenseById(
+  tool: string,
+  id: string,
+): { deleted: boolean; id: string; expense?: ExpenseRow } {
+  const { items } = readExpenses(tool);
+  const target = items.find((e) => e.id === id);
+
+  if (!target) {
+    return { deleted: false, id };
+  }
+
+  writeExpenses(items.filter((e) => e.id !== id));
+  logFailure(tool, `deleted ${id}`);
+  return { deleted: true, id, expense: target };
+}
+
 // Cap a list so the model never gets a huge dump
 export function cap<T>(items: T[], limit = MAX_ITEMS) {
   return {

@@ -1,6 +1,4 @@
 id,date,amount,category,note
-2,2026-08-03,35,transport,Taxi
-3,2026-08-05,75.25,entertainment,Cinema
 4,2026-08-08,450,rent,Monthly rent
 5,2026-08-10,18.75,food,Lunch
 6,2026-08-12,22,transport,Bus card

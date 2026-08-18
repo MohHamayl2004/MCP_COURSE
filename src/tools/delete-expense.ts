@@ -14,9 +14,14 @@ export function registerDeleteExpenseTool(server: McpServer): void {
       try {
         const result = await deleteExpense(id);
         return {content: [{type: "text", text: JSON.stringify(result, null, 2),},],};
-      } catch (error) {
+      } 
+      catch (error) {
         const reason = error instanceof Error ? error.message : "Unknown error";
         console.error(`[delete_expense] ${reason}`);
-        return {content: [{type: "text", text: "Could not delete the expense.",},],isError: true,};
-      }},);
+
+        const message = reason.includes("was not found")
+          ? `Expense with ID ${id} does not exist.`
+          : "Could not delete the expense.";
+
+        return { content: [{type: "text", text: message,},], isError: true,};}},);
 }

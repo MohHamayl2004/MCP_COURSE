@@ -13,38 +13,16 @@ export function registerGetMonthlySummaryTool(
     "get_monthly_summary",
     {
       title: "Get Monthly Summary",
-      description:
-        "Return a summary of expenses for a selected month.",
+      description: "Return a summary of expenses for a selected month.",
       inputSchema: getMonthlySummaryInputSchema,
     },
     async ({ month }) => {
       try {
         const result = await getMonthlySummary(month);
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: JSON.stringify(result, null, 2),
-            },
-          ],
-        };
+        return {content: [{type: "text", text: JSON.stringify(result, null, 2),},],};
       } catch (error) {
-        const reason =
-          error instanceof Error ? error.message : "Unknown error";
-
-        console.error(`[get_monthly_summary] ${reason}`);
-
-        return {
-          content: [
-            {
-              type: "text",
-              text: "Could not generate the monthly summary.",
-            },
-          ],
-          isError: true,
-        };
-      }
-    },
-  );
+        const reason = error instanceof Error ? error.message : "Unknown error";
+        console.error(`[get_monthly_summary] ${reason}`)
+        return {content: [{type: "text", text: "Could not generate the monthly summary.",},], isError: true,};
+      }},);
 }

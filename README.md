@@ -83,6 +83,9 @@ Once the server is connected to an MCP client, these all work in plain language:
 - "What categories am I tracking?"
 - "What was my biggest expense in July?"
 
+See [`examples/conversations.md`](examples/conversations.md) for three worked examples
+showing the tool calls behind each prompt and what a good final answer looks like.
+
 ## Data
 
 All expenses live in `data/expenses.csv`, which is committed to the repo so the project

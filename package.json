@@ -5,6 +5,7 @@
   "description": "NextFlows Academy starter — build an MCP server in TypeScript (Weeks 1–6)",
   "type": "module",
   "scripts": {
+    "build": "tsc",
     "start": "tsx src/index.ts",
     "dev": "tsx src/index.ts",
     "inspect": "npx @modelcontextprotocol/inspector npx tsx src/index.ts",

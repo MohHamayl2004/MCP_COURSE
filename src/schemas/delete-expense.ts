@@ -1,14 +1,14 @@
-
 import { z } from "zod";
 
 /**
  * Input validation for the delete_expense tool.
- * The tool expects the row number of the expense to delete.
+ *
+ * Deletion is by id, not by row position. Row numbers shift after every delete,
+ * so "delete row 3" twice would remove two different expenses.
  */
-
 export const deleteExpenseInputSchema = z.object({
-  row: z
+  id: z
     .string()
-    .regex(/^[1-9]\d*$/, "Row number must be a positive integer")
-    .describe("Enter the row number of the expense to delete"),
+    .regex(/^exp_\d+$/, "Id must look like exp_001")
+    .describe("Id of the expense to delete, for example exp_003"),
 });

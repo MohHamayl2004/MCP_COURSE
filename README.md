@@ -38,7 +38,7 @@ To run the tests:
 npm test
 ```
 
-23 tests covering the pure helper functions: CSV escaping and parsing, filtering,
+27 tests covering the pure helper functions: CSV escaping and parsing, filtering,
 monthly summaries, id generation and output caps.
 
 ## Try it in Inspector
@@ -53,6 +53,34 @@ Open the URL it prints, click the toggle next to the server to connect, then ope
 **Tools** tab. Select `list_expenses`, leave the arguments empty and hit **Execute
 Tool** — you should get the sample expenses back.
 
+## Use it with Claude Desktop
+
+Open Claude Desktop → **Settings** → **Developer** → **Edit Config**, and add this
+inside `mcpServers` (keep anything already in the file):
+
+```json
+{
+  "mcpServers": {
+    "expense-tracker": {
+      "command": "npx",
+      "args": ["tsx", "C:\\path\\to\\MCP_COURSE\\src\\index.ts"]
+    }
+  }
+}
+```
+
+Replace the path with wherever you cloned the repo. On macOS or Linux use a normal path
+like `/Users/you/MCP_COURSE/src/index.ts`.
+
+Quit Claude Desktop completely and reopen it — it only reads that file at launch. The
+server should then appear under **Manage connectors**, and you can just ask:
+
+> How much did I spend in July?
+
+The data folder is resolved relative to the project, not your working directory, so it
+works no matter where Claude launches the process from. Set `EXPENSES_DATA_DIR` if you
+want to point it at a different CSV.
+
 ## Tools
 
 | tool | what it does | inputs |
@@ -61,8 +89,8 @@ Tool** — you should get the sample expenses back.
 | `list_expenses` | Lists expenses, optionally filtered | `month` (YYYY-MM, optional), `category` (optional), `limit` (1–100, default 20) |
 | `get_spending_summary` | Monthly total plus a per-category breakdown | `month` (YYYY-MM) |
 | `list_categories` | Every category present in the data | `month` (YYYY-MM, optional) |
-| `delete_expense` | **Not implemented yet** — stub | `row` |
-| `get_top_expenses` | **Not implemented yet** — stub | `month` (optional), `limit` |
+| `delete_expense` | Removes one expense by id | `id` (e.g. `exp_003`) |
+| `get_top_expenses` | The largest expenses, optionally for one month | `month` (YYYY-MM, optional), `limit` (1–100) |
 
 ## Resources
 

@@ -57,22 +57,29 @@ money, so they should get an answer about their money, not a table of JSON keys.
 
 **Expected tool calls**
 
-1. `list_categories` with `{}` — optional, only if the model needs to confirm that
-   "food" is a category that exists in the data
-2. `list_expenses` with `{ "month": "2026-07", "category": "food" }`
+1. `list_expenses` with `{ "category": "food" }`
 
-If the user hadn't named a month, the model should either ask which month or default to
-the current one and say so, rather than listing everything ever recorded.
+No month was named, so the model shouldn't invent one. Listing everything and splitting
+it by month in the answer is better than silently guessing "this month" — the user finds
+out what the whole picture looks like and can narrow down from there.
 
 **A good final answer**
 
-> In July you spent 167 on food across three purchases: weekly groceries at 120, dinner
-> with friends at 32, and lunch at the campus cafeteria at 15. Groceries account for
-> most of it.
+> Every food item on record comes to 232. July was 167: weekly groceries at 120, dinner
+> with friends at 32, and lunch at the campus cafeteria at 15. August so far is 65
+> across three smaller items.
+>
+> The split is really one grocery run at 120 versus eating out at 112 spread over five
+> purchases — the eating-out side accumulates in small, frequent bites.
 
-The individual rows the user asked for, plus one line of interpretation. If more than
-20 rows come back, the response includes a `truncated` count, and the model should say
+The individual rows the user asked for, plus one line of interpretation. If more than 20
+rows come back the response includes a `truncated` count, and the model should say
 "showing the first 20 of 34" rather than silently hiding the rest.
+
+**Watch for over-reading.** With this data a model may also note that six weeks with one
+grocery run suggests some spending isn't being logged. That's a reasonable observation,
+but it's inference from missing rows, not something the tools returned — so it should be
+phrased as a question rather than a finding.
 
 ---
 

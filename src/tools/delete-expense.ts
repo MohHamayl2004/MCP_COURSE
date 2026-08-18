@@ -1,81 +1,52 @@
-import fs from "fs";
-import path from "path";
 import { McpServer } from "@modelcontextprotocol/server";
-import { deleteExpenseInputSchema } from "../schemas/delete-expense.js";
 
-export function registerDeleteExpenseTool(server: McpServer) {
+import { deleteExpenseInputSchema } from "../schemas/delete-expense.js";
+import { deleteExpenseById } from "../lib/expenses.js";
+import { logFailure } from "../lib/csv.js";
+
+/** Delete a single expense by id (P1). */
+export function registerDeleteExpenseTool(server: McpServer): void {
   server.registerTool(
     "delete_expense",
     {
       title: "Delete Expense",
-      description: "[P1 — not implemented] Delete a single expense by its id.",
+      description: "Delete a single expense by its id, for example exp_003.",
       inputSchema: deleteExpenseInputSchema.shape,
     },
-    async ({ row }) => {
+    async ({ id }) => {
       try {
-        const filePath = path.join(process.cwd(), "data", "expenses.csv");
+        const result = deleteExpenseById("delete_expense", id);
 
-        if (!fs.existsSync(filePath)) {
+        if (!result.deleted) {
           return {
-            content: [
-              {
-                type: "text",
-                text: "Expenses file not found.",
-              },
-            ],
+            content: [{ type: "text", text: `No expense found with id ${id}.` }],
           };
         }
 
-        const rows = fs.readFileSync(filePath, "utf-8").trim().split("\n");
-
-        if (rows.length <= 1) {
-          return {
-            content: [
-              {
-                type: "text",
-                text: "No expenses found.",
-              },
-            ],
-          };
-        }
-
-        const rowIndex = Number(row);
-
-        if (rowIndex < 1 || rowIndex >= rows.length) {
-          return {
-            content: [
-              {
-                type: "text",
-                text: `Invalid row number: ${row}`,
-              },
-            ],
-          };
-        }
-
-        rows.splice(rowIndex, 1);
-
-        fs.writeFileSync(filePath, rows.join("\n"));
-
+        const { expense } = result;
         return {
           content: [
             {
               type: "text",
-              text: `Expense at row ${row} deleted successfully.`,
+              text: `Deleted ${id}: ${expense?.amount} on ${expense?.category} (${expense?.date}).`,
             },
           ],
         };
       } catch (error) {
+        logFailure(
+          "delete_expense",
+          error instanceof Error ? error.message : String(error),
+        );
         return {
+          isError: true,
           content: [
             {
               type: "text",
-              text: `Error deleting expense: ${
-                error instanceof Error ? error.message : String(error)
-              }`,
+              text: "Could not delete the expense. The data file may be missing or locked.",
             },
           ],
         };
       }
-    }
+    },
   );
 }

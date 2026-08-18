@@ -85,5 +85,7 @@ Ideas noticed while testing, deliberately not implemented now:
   is confusing and makes the schema harder to unit test.
 - `examples/` contains stale duplicates (`get-monthly-summary.json`,
   `delete-expense.json`) left over from the tool rename.
-- No README yet.
-- `delete_expense` and `get_top_expenses` are still stubs.
+- ~~No README yet.~~ Written in 5.4.
+- ~~`delete_expense` and `get_top_expenses` are still stubs.~~ Both now implemented on
+  top of the shared lib. `delete_expense` deletes by id rather than row position, since
+  row numbers shift after each delete.

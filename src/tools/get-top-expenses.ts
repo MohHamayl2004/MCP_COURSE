@@ -1,73 +1,67 @@
-import { readFileSync } from "node:fs";
-import path from "node:path";
 import type { McpServer } from "@modelcontextprotocol/server";
 
 import { getTopExpensesInputSchema } from "../schemas/get-top-expenses.js";
+import { loadExpenses, topExpenses } from "../lib/expenses.js";
+import { logFailure } from "../lib/csv.js";
 
-type Expense = {
-  id: string;
-  date: string;
-  amount: number;
-  category: string;
-  note: string;
-};
-
-function readExpensesFromCsv(): Expense[] {
-  const filePath = path.resolve(process.cwd(), "data", "expenses.csv");
-
-  let content: string;
-  try {
-    content = readFileSync(filePath, "utf8");
-  } catch {
-    return [];
-  }
-
-  return content
-    .trim()
-    .split(/\r?\n/)
-    .slice(1)
-    .filter(Boolean)
-    .map((line) => {
-      const [id, date, amount, category, note] = line.split(",");
-      return {
-        id,
-        date,
-        amount: Number(amount),
-        category,
-        note,
-      };
-    });
-}
-
-/** Return the largest expense records, optionally limited to one month. */
+/** Return the largest expense records, optionally limited to one month (P1). */
 export function registerGetTopExpensesTool(server: McpServer): void {
   server.registerTool(
     "get_top_expenses",
     {
       title: "Get top expenses",
-      description: "[P1 — not implemented] Return the largest expenses for a month.",
+      description:
+        "Return the largest expenses, optionally limited to a single month.",
       inputSchema: getTopExpensesInputSchema,
     },
     async ({ month, limit }) => {
-      const topExpenses = readExpensesFromCsv()
-        .filter((expense) => !month || expense.date.startsWith(month))
-        .sort((first, second) => second.amount - first.amount)
-        .slice(0, limit)
-        .map(({ id, amount, category, note }) => ({
-          id,
-          amount,
-          category,
-          note,
-        }));
+      try {
+        const { items, skippedRows } = loadExpenses("get_top_expenses");
+        const rows = topExpenses(items, { month, limit });
 
-      return {
-        content: [
-          {
-            type: "text",
-            text: JSON.stringify(topExpenses, null, 2),
-          },
-        ],
-      };
+        if (rows.length === 0) {
+          return {
+            content: [
+              {
+                type: "text",
+                text: month
+                  ? `No expenses recorded for ${month}.`
+                  : "No expenses recorded yet.",
+              },
+            ],
+          };
+        }
+
+        const payload = {
+          items: rows.map(({ id, date, amount, category, note }) => ({
+            id,
+            date,
+            amount,
+            category,
+            note,
+          })),
+          count: rows.length,
+          skippedRows,
+        };
+
+        return {
+          content: [{ type: "text", text: JSON.stringify(payload, null, 2) }],
+        };
+      } catch (error) {
+        logFailure(
+          "get_top_expenses",
+          error instanceof Error ? error.message : String(error),
+        );
+        return {
+          isError: true,
+          content: [
+            {
+              type: "text",
+              text: "Could not read the expense data. The file may be missing or unreadable.",
+            },
+          ],
+        };
+      }
     },
   );
 }

@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import { test, describe } from "node:test";
 
-import { filterExpenses, summarizeMonth, nextId, cap } from "./expenses.js";
+import { filterExpenses, summarizeMonth, nextId, cap, topExpenses } from "./expenses.js";
 import type { ExpenseRow } from "../schemas/expense-row.js";
 
 const rows: ExpenseRow[] = [
@@ -69,6 +69,28 @@ describe("nextId", () => {
       { id: "7a35164f-b4ef-4633-867e", date: "2026-08-01", amount: 5, category: "food", note: "" },
     ];
     assert.equal(nextId(messy), "exp_005");
+  });
+});
+
+describe("topExpenses", () => {
+  test("returns the largest first", () => {
+    const top = topExpenses(rows, { limit: 2 });
+    assert.deepEqual(top.map((e) => e.id), ["exp_003", "exp_002"]);
+  });
+
+  test("respects the month filter", () => {
+    const top = topExpenses(rows, { month: "2026-08", limit: 5 });
+    assert.deepEqual(top.map((e) => e.id), ["exp_004"]);
+  });
+
+  test("does not mutate the input array", () => {
+    const before = rows.map((e) => e.id);
+    topExpenses(rows, { limit: 4 });
+    assert.deepEqual(rows.map((e) => e.id), before);
+  });
+
+  test("returns an empty array for a month with no data", () => {
+    assert.deepEqual(topExpenses(rows, { month: "2026-01", limit: 5 }), []);
   });
 });
 

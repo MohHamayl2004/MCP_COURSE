@@ -1,19 +1,31 @@
-﻿node_modules/
-dist/
-build/
+# Dependencies
+node_modules/
 
+# Build output
+build/
+dist/
+*.tsbuildinfo
+
+# Environment and secrets
 .env
 .env.local
 .env.*.local
-
 *.pem
 *.key
 *.p12
 credentials.json
 secrets.json
 
+# Logs
 *.log
+npm-debug.log*
+
+# Editor and OS junk
+.vscode/
+.idea/
 .DS_Store
 Thumbs.db
+desktop.ini
 
+# Temp files written during a safe CSV rewrite
 data/*.tmp

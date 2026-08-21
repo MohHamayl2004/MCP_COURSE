@@ -31,9 +31,11 @@ the path and rejects anything landing outside `./data`. No tool accepts a filena
 argument. Attempts like `../../etc/passwd` are refused, and the rejected path is not
 echoed back in the error.
 
-**Network allowlist and timeout.** No tool makes a network request. The unused
-`fetchJson()` helper enforces an empty host allowlist, requires HTTPS, and applies an
-8-second `AbortSignal.timeout`, so it fails closed if it is ever wired up.
+**No network surface.** There is no `fetch` call anywhere in `src/`, so SSRF is not
+reachable. An earlier `fetchJson()` helper was removed rather than left unused — a
+working `fetch(anyUrl)` sitting in the repo is a hole waiting for a future tool to be
+plugged into it. If a network call is ever added, it must go through a host allowlist,
+require HTTPS, and set an `AbortSignal.timeout`.
 
 **Output caps.** `list_expenses` returns at most 100 rows (20 by default) and reports how
 many were truncated. The `expenses://fixture` resource returns at most 50 rows plus a
